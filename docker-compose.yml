@@ -1,0 +1,32 @@
+services:
+  app:
+    user: root
+    build: .
+    entrypoint: ./.docker/entrypoint.sh
+    volumes:
+      - .:/home/node/app
+    ports:
+      - '${PORT}:3000'
+    depends_on:
+      - db
+  cli:
+    build: .
+    volumes:
+      - .:/home/node/app
+    command: 'tail -f /dev/null'
+  db:
+    image: postgres
+    restart: always
+    tty: true
+    ports:
+      - '${DB_PORT}:5432'
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    volumes:
+      - db-volume:/var/lib/postgresql/data
+
+volumes:
+  db-volume:
+    driver: local

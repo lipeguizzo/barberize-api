@@ -1,0 +1,299 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique @db.VarChar(100)
+  email     String    @unique @db.VarChar(100)
+  password  String    @db.VarChar(200)
+  gender    Gender    @default(M)
+  phone     String    @db.VarChar(20)
+  status    Status    @default(ACTIVE)
+  roleId    Int       @map("role_id")
+  companyId Int?      @map("company_id")
+  avatarId  Int?      @unique @map("avatar_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  role     Role?       @relation(fields: [roleId], references: [id])
+  company  Company?    @relation(fields: [companyId], references: [id])
+  avatar   StoredFile? @relation(fields: [avatarId], references: [id])
+
+  clientSchedulings Scheduling[] @relation("ClientScheduling")
+  barberSchedulings Scheduling[] @relation("BarberScheduling")
+
+  clientAssessments Assessment[] @relation("ClientAssessment")
+  barberAssessments Assessment[] @relation("BarberAssessment")
+
+  @@map("users")
+}
+
+model Role {
+  id        Int            @id @default(autoincrement())
+  name      String         @unique @db.VarChar(100)
+  isDefault Boolean        @default(false)
+  reference RoleReferences @default(CLIENT)
+  status    Status         @default(ACTIVE)
+  companyId Int?           @map("company_id")
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+  deletedAt DateTime?      @map("deleted_at")
+
+  company        Company?      @relation(fields: [companyId], references: [id])
+  users          User[]
+  rolesAbilities RoleAbility[]
+
+  @@map("roles")
+}
+
+model Ability {
+  id        Int            @id @default(autoincrement())
+  code      AbilityCodes   @default(USERS)
+  action    AbilityActions @default(CREATE)
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+  deletedAt DateTime?      @map("deleted_at")
+
+  rolesAbilities RoleAbility[]
+
+  @@map("abilities")
+}
+
+model RoleAbility {
+  roleId    Int      @map("role_id")
+  abilityId Int      @map("ability_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  role    Role    @relation(fields: [roleId], references: [id])
+  ability Ability @relation(fields: [abilityId], references: [id])
+
+  @@id([roleId, abilityId])
+  @@map("role_abilities")
+}
+
+model Company {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique @db.VarChar(100)
+  tradeName String?   @map("trade_name") @db.VarChar(100)
+  email     String    @unique @db.VarChar(100)
+  status    Status    @default(ACTIVE)
+  addressId    Int      @map("address_id")
+  avatarId  Int?      @unique @map("avatar_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  address    Address    @relation(fields: [addressId], references: [id])
+  avatar   StoredFile? @relation(fields: [avatarId], references: [id])
+  users        User[]
+  roles        Role[]
+  haircuts     Haircut[]
+  hours        Horary[]
+  schedulings  Scheduling[]
+  assessments  Assessment[]
+  workingDays WorkingDay[]
+  holidays Holiday[]
+
+  @@map("companies")
+}
+
+model Address {
+  id            Int       @id @default(autoincrement())
+  state         String    @db.Char(2)
+  city          String    @db.VarChar(100)
+  street        String    @db.VarChar(100)
+  neighborhood  String    @db.VarChar(100)
+  complement    String?   @db.VarChar(150)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  companies  Company[]
+
+  @@map("addresses")
+}
+
+model StoredFile {
+  id           Int      @id @default(autoincrement())
+  uuid         String   @unique() @default(uuid()) @db.VarChar(100)
+  alt          String
+  originalName String   @map("original_name") @db.VarChar(100)
+  storedName   String   @map("stored_name") @db.VarChar(150)
+  relativePath String   @map("relative_path")
+  contentType  String   @map("content_type")
+  isPublic     Boolean  @default(false) @map("is_public")
+  checksum     String   @db.Char(32)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user        User?
+  company     Company?
+
+  @@map("stored_files")
+}
+
+model Haircut {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(100)
+  price     Float
+  duration  Int
+  companyId Int       @map("company_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  company     Company      @relation(fields: [companyId], references: [id])
+  schedulings Scheduling[]
+
+  @@map("haircuts")
+}
+
+model Horary {
+  id          Int      @id @default(autoincrement())
+  time        String
+  isAvailable Boolean
+  companyId   Int      @map("company_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  company     Company      @relation(fields: [companyId], references: [id])
+  schedulings Scheduling[]
+
+  @@map("hours")
+}
+
+model WorkingDay {
+  id          Int      @id @default(autoincrement())
+  day         DayOfWeek
+  isOpen      Boolean  @default(true)
+  companyId   Int      @map("company_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@map("working_days")
+}
+
+model Holiday {
+  id          Int      @id @default(autoincrement())
+  name        String
+  dayMonth    String
+  companyId   Int      @map("company_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@map("holidays")
+}
+
+
+model Scheduling {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  companyId Int      @map("company_id")
+  horaryId  Int      @map("horary_id")
+  haircutId Int      @map("haircut_id")
+  clientId  Int      @map("client_id")
+  barberId  Int      @map("barber_id")
+  status    SchedulingStatus    @default(WAITING)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+  horary  Horary  @relation(fields: [horaryId], references: [id])
+  haircut Haircut @relation(fields: [haircutId], references: [id])
+  client  User    @relation("ClientScheduling", fields: [clientId], references: [id])
+  barber  User    @relation("BarberScheduling", fields: [barberId], references: [id])
+  histories History[]
+
+  @@map("schedulings")
+}
+
+model Assessment {
+  id        Int      @id @default(autoincrement())
+  score     Int
+  commentary String?
+  companyId Int      @map("company_id")
+  clientId  Int      @map("client_id")
+  barberId  Int      @map("barber_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+  client  User    @relation("ClientAssessment", fields: [clientId], references: [id])
+  barber  User    @relation("BarberAssessment", fields: [barberId], references: [id])
+
+  @@map("assessments")
+}
+
+model History {
+  id        Int      @id @default(autoincrement())
+  schedulingId  Int      @map("scheduling_id")
+  action      String    @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  scheduling Scheduling @relation(fields: [schedulingId], references: [id])
+
+  @@map("histories")
+}
+
+enum Gender {
+  M
+  F
+  O
+}
+
+enum Status {
+  ACTIVE
+  DISABLED
+  BLOCKED
+  WAITING
+}
+
+enum SchedulingStatus {
+  CONFIRMED
+  WAITING
+  COMPLETED
+  CANCELED
+}
+
+enum RoleReferences {
+  ADMIN
+  ADMIN_COMPANY
+  PROFESSIONAL
+  CLIENT
+}
+
+enum AbilityCodes {
+  ADMIN
+  COMPANIES
+  USERS
+  ROLES
+  HAIRCUTS
+  HOURS
+  WORKING_DAYS
+  HOLIDAYS
+  SCHEDULINGS
+  ASSESSMENTS
+  HISTORIES
+}
+
+enum AbilityActions {
+  READ
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+
+  <body style="font-family: 'Courier New', monospace; box-sizing: border-box;">
+    <table style='width: 100%'>
+        <tr>
+          {{>header title='Agendamento confirmado' bg-color='#2F3347' text-color='#fff'}} 
+        </tr>
+        <tr>
+            <table style='background-color: #fff;width: 100%; text-align: center; padding: 20px;'>
+                <tr>
+                  <td>  
+                    <p style='font-size: 20px; margin: 20px;'>Seu agendamento para o dia {{ date }} no horário {{ horary }} foi confirmado.</p>
+                    <p style='font-size: 20px; margin: 20px;'>Cliente: {{client}}</p>
+                    <p style='font-size: 20px; margin: 20px;'>Barbeiro: {{barber}}</p>
+                    <p style='font-size: 20px; margin: 20px;'>Empresa: {{company}}</p>
+                  </td>
+                </tr>
+            </table>
+        </tr>
+        <tr>
+          {{>footer bg-color='#2F3347' text-color='#fff'}}
+        </tr>
+    </table>
+</body>
+</html>
